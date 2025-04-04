@@ -19,12 +19,18 @@ authRoutes.post("/logout", logOutController);
 
 authRoutes.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  })
 );
 
 authRoutes.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: failedUrl }),
+  passport.authenticate("google", {
+    failureRedirect: failedUrl,
+    session: false,
+  }),
   googleloginCallback
 );
 

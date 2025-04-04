@@ -6,9 +6,18 @@ import { Request } from "express";
 import { NotFoundException } from "../utils/appError";
 import { ProviderEnum } from "../enums/account-provider.enum";
 import {
+  findUserById,
   loginOrCreateAccountService,
   verifyUserService,
 } from "../services/auth.service";
+
+import {
+  Strategy as JwtStrategy,
+  ExtractJwt,
+  StrategyOptions,
+} from "passport-jwt";
+
+import { signJwtToken } from "../utils/jwt";
 
 passport.use(
   new GoogleStrategy(
@@ -35,6 +44,9 @@ passport.use(
           picture: picture,
           email: email,
         });
+        const jwt = signJwtToken({ userId: user._id });
+
+        req.jwt = jwt;
         done(null, user);
       } catch (error) {
         done(error, false);
@@ -46,13 +58,37 @@ passport.use(
 passport.serializeUser((user: any, done) => done(null, user));
 passport.deserializeUser((user: any, done) => done(null, user));
 
+interface JWtPayload {
+  userId: string;
+}
+
+const options: StrategyOptions = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: config.JWT_SECRETE,
+  audience: ["user"],
+  algorithms: ["HS256"],
+};
+
+passport.use(
+  new JwtStrategy(options, async function (jwt_payload: JWtPayload, done) {
+    try {
+      const user = await findUserById(jwt_payload.userId);
+      if (!user) {
+        return done(null, false);
+      }
+      return done(null, user);
+    } catch (error) {
+      return done(error, false);
+    }
+  })
+);
 // passport local goes here
 passport.use(
   new LocalStrategy(
     {
       usernameField: "email",
       passwordField: "password",
-      session: true,
+      session: false,
     },
     async (email, password, done) => {
       try {
@@ -64,3 +100,7 @@ passport.use(
     }
   )
 );
+
+export const passportAutheticateJwt = passport.authenticate("jwt", {
+  session: false,
+});

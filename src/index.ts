@@ -3,7 +3,7 @@ dotenvConfig();
 import express, { Request, Response, NextFunction } from "express";
 
 import cors from "cors";
-import session from "cookie-session";
+// import session from "cookie-session";
 import { config } from "./config/app.config";
 import connectDatabase from "./config/database.config";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
@@ -18,6 +18,7 @@ import workSpaceRoutes from "./routes/workspace.route";
 import memberRoutes from "./routes/member.route";
 import projectRoutes from "./routes/project.route";
 import taskRoutes from "./routes/task.route";
+import { passportAutheticateJwt } from "./config/passport.config";
 // app config
 const app = express();
 const BASE_PATH = config.BASE_PATH;
@@ -25,16 +26,16 @@ const BASE_PATH = config.BASE_PATH;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  session({
-    name: "session",
-    keys: [config.SESSION_SECRET],
-    maxAge: 24 * 60 * 60 * 1000,
-    secure: config.NODE_ENV === "production",
-    httpOnly: true,
-    sameSite: "lax",
-  })
-);
+// app.use(
+//   session({
+//     name: "session",
+//     keys: [config.SESSION_SECRET],
+//     maxAge: 24 * 60 * 60 * 1000,
+//     secure: config.NODE_ENV === "production",
+//     httpOnly: true,
+//     sameSite: "lax",
+//   })
+// );
 
 app.use(
   cors({
@@ -45,7 +46,7 @@ app.use(
 // passport config
 
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 
 app.get(
   "/",
@@ -56,14 +57,14 @@ app.get(
   })
 );
 app.use(`${BASE_PATH}/auth`, authRoutes);
-app.use(`${BASE_PATH}/auth`, isAuthenticated, userRoutes);
-app.use(`${BASE_PATH}/workspace`, isAuthenticated, workSpaceRoutes);
+app.use(`${BASE_PATH}/auth`, passportAutheticateJwt, userRoutes);
+app.use(`${BASE_PATH}/workspace`, passportAutheticateJwt, workSpaceRoutes);
 
-app.use(`${BASE_PATH}/member`, isAuthenticated, memberRoutes);
+app.use(`${BASE_PATH}/member`, passportAutheticateJwt, memberRoutes);
 
-app.use(`${BASE_PATH}/project`, isAuthenticated, projectRoutes);
+app.use(`${BASE_PATH}/project`, passportAutheticateJwt, projectRoutes);
 
-app.use(`${BASE_PATH}/task`, isAuthenticated, taskRoutes);
+app.use(`${BASE_PATH}/task`, passportAutheticateJwt, taskRoutes);
 
 app.use(errorHandler);
 

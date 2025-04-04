@@ -5,21 +5,25 @@ import { registerSchema } from "../validation/auth.validation";
 import { HTTPSTATUS } from "../config/http.config";
 import { registerUserService } from "../services/auth.service";
 import passport from "passport";
+import { signJwtToken } from "../utils/jwt";
 
 export const googleloginCallback = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
+    const jwt = req.jwt;
     // @ts-ignore
     const currentWorkSpace = req.user?.currentWorkspace;
-    console.log("🚀 ~ req.user:", req.user);
-    if (!currentWorkSpace) {
+    if (!jwt) {
       return res.redirect(
         `${config.FRONTEND_GOOGLE_CALLBACK_URL}?status=failure`
       );
     }
 
     return res.redirect(
-      `${config.FRONTEND_ORIGIN}/workspace/${currentWorkSpace}`
+      `${config.FRONTEND_GOOGLE_CALLBACK_URL}?status=success&access_token=${jwt}&current_workspace=${currentWorkSpace}`
     );
+    // return res.redirect(
+    //   `${config.FRONTEND_ORIGIN}/workspace/${currentWorkSpace}`
+    // );
   }
 );
 
@@ -39,7 +43,7 @@ export const loginUserController = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate(
       "local",
-      (
+      async (
         err: Error | null,
         user: Express.User | false,
         info: { message: string } | undefined
@@ -53,15 +57,23 @@ export const loginUserController = asyncHandler(
           });
         }
 
-        req.login(user, (err) => {
-          if (err) {
-            return next(err);
-          }
+        // req.login(user, (err) => {
+        //   if (err) {
+        //     return next(err);
+        //   }
 
-          return res.status(HTTPSTATUS.OK).json({
-            message: "User login successfully",
-            user,
-          });
+        //   return res.status(HTTPSTATUS.OK).json({
+        //     message: "User login successfully",
+        //     user,
+        //   });
+        // });
+        const access_token = await signJwtToken({
+          userId: user._id,
+        });
+        return res.status(HTTPSTATUS.OK).json({
+          message: "User login successfully",
+          access_token,
+          user,
         });
       }
     )(req, res, next);

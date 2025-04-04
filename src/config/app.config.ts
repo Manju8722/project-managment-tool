@@ -6,6 +6,9 @@ const appConfig = () => ({
   BASE_PATH: getEnv("BASE_PATH", "/api"),
   MONGO_URI: getEnv("MONGO_URI", ""),
 
+  JWT_SECRETE: getEnv("JWT_SECRETE"),
+  JWT_EXPIRES_In: getEnv("JWT_EXPIRES_In", "1d"),
+
   SESSION_SECRET: getEnv("SESSION_SECRET"),
   SESSION_EXPIRES_IN: getEnv("SESSION_EXPIRES_IN"),
 
